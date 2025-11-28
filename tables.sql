@@ -13,7 +13,7 @@ AudioHash varchar(64) unique
 show columns in audio;
 
 CREATE TABLE AudioFingerprint(
-FingerprintID bigint primary key auto_increment,
+FingerprintID bigint primary key auto_increment, -- need to set on delete cascase
 AudioID int,  -- have to set this as foreign key
 FingerprintHash varchar(64) unique,
 FingerprintOffset int,
