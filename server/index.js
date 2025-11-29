@@ -144,3 +144,39 @@ app.post('/identify', upload.single('audio_file'), (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+
+app.get('/lineage/:id', (req, res) => {
+    const childId = req.params.id;
+
+    // Spawn Python worker to fetch lineage data
+    const pythonProcess = spawn(pythonExec, [
+        path.join(__dirname, '../scripts/lineage_worker.py'),
+        childId
+    ]);
+
+    let dataBuffer = '';
+    let stderrBuffer = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+        dataBuffer += data.toString();
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+        const msg = data.toString();
+        stderrBuffer += msg;
+        console.error(`Python Error: ${msg}`);
+    });
+
+    pythonProcess.on('close', (code) => {
+        console.log(`Lineage worker exited with code ${code}`);
+        
+        try {
+            const result = JSON.parse(dataBuffer);
+            res.json(result);
+        } catch (e) {
+            const debugMessage = `Error parsing Python output: stdout=${dataBuffer} stderr=${stderrBuffer}`;
+            console.error('Failed to parse JSON from lineage worker:', e);
+            res.status(500).json({ error: debugMessage });
+        }
+    });
+});
