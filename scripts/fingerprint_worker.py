@@ -80,13 +80,22 @@ def generate_fingerprints(file_path):
                     time_ms = int(librosa.frames_to_time(t1, sr=sr) * 1000)
                     
                     hashes.append((h_val, time_ms))
+        # Print all generated hashes to the terminal for debugging/visibility
+        try:
+            #print(f"Generated {len(hashes)} fingerprints for: {file_path}")
+            #for hh, tt in hashes:
+            #    print(f"{hh} @ {tt}ms")
+            pass
+        except Exception:
+            # Avoid breaking fingerprint generation if printing fails
+            pass
         return hashes
     except Exception as e:
         # If audio processing fails (e.g. corrupt file), return empty list
         # In production, you might want to log this error specifically
         return []
 
-def ingest_file(file_path):
+def ingest_file(file_path, original_filename=None):
     conn = None
     try:
         # 2. CONNECT TO MYSQL
@@ -108,7 +117,8 @@ def ingest_file(file_path):
         with open(file_path, 'rb') as f:
             binary_data = f.read()
         
-        filename = os.path.basename(file_path)
+        # Use original filename if provided, otherwise extract from temp file path
+        filename = original_filename if original_filename else os.path.basename(file_path)
         
         # We store tech metadata about the analysis
         metadata = json.dumps({
@@ -131,6 +141,15 @@ def ingest_file(file_path):
         # Calculate the "DNA"
         fingerprint_list = generate_fingerprints(file_path)
         
+        # Print the fingerprints that will be inserted (hash and offset)
+        try:
+            #print(f"Preparing to insert {len(fingerprint_list)} fingerprints for AudioId {new_id}")
+            #for hh, tt in fingerprint_list:
+            #    print(f"Insert -> {hh} @ {tt}ms")
+            pass
+        except Exception:
+            pass
+
         if fingerprint_list:
             # Prepare for bulk insert: (AudioId, Hash, Offset)
             bulk_values = [(new_id, h, t) for (h, t) in fingerprint_list]
@@ -142,7 +161,11 @@ def ingest_file(file_path):
                 INSERT INTO AudioFingerprint (AudioId, FingerprintHash, FingerprintOffset) 
                 VALUES (%s, %s, %s)
             """
-            cursor.executemany(query_fingerprints, bulk_values)
+            # cursor.executemany(query_fingerprints, bulk_values)
+            # try:
+            #     print(f"Inserted {len(bulk_values)} fingerprints for AudioId {new_id}")
+            # except Exception:
+            #     pass
 
         conn.commit() # Save everything
 
@@ -172,5 +195,7 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore")
 
     input_path = sys.argv[1]
-    result = ingest_file(input_path)
+    # If original filename was passed, store it for use in ingest_file
+    original_filename = sys.argv[2] if len(sys.argv) > 2 else None
+    result = ingest_file(input_path, original_filename)
     print(json.dumps(result))

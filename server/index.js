@@ -23,9 +23,11 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         // We append the current timestamp to the filename to avoid overwrites.
-        // "kick.wav" becomes "kick-16982323232.wav"
+        // Extract filename without extension from the original name
+        const basename = path.parse(file.originalname).name;
+        const ext = path.extname(file.originalname);
         const uniqueSuffix = Date.now();
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        cb(null, basename + '-' + uniqueSuffix + ext);
     }
 });
 
@@ -41,12 +43,14 @@ app.post('/uploads', upload.single('audio_file'), (req, res) => {
     }
 
     console.log(`File saved at: ${req.file.path}`);
+    console.log(`Original filename: ${req.file.originalname}`);
 
     // 3. THE BRIDGE (Spawn Python)
     // We run the python command, passing the file path as an argument.
     const pythonProcess = spawn(pythonExec, [
         path.join(__dirname, '../scripts/fingerprint_worker.py'), // Script to run
-        req.file.path                                            // Argument 1: The File Path
+        req.file.path,                                           // Argument 1: The File Path
+        req.file.originalname                                    // Argument 2: Original Filename
     ]);
 
     let dataBuffer = '';
@@ -102,7 +106,8 @@ app.post('/identify', upload.single('audio_file'), (req, res) => {
     // Use 'python' on Windows; 'python3' may not be present.
     const pythonProcess = spawn(pythonExec, [
         path.join(__dirname, '../scripts/search_worker.py'),
-        req.file.path
+        req.file.path,
+        req.file.originalname                                    // Argument 2: Original Filename
     ]);
 
     let dataBuffer = '';
