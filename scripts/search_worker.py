@@ -11,12 +11,11 @@ import warnings
 
 # 1. DATABASE CONFIGURATION
 db_config = {
-    'user': 'root',
-    'password': 'Suhit@2004',  # <--- UPDATE THIS
-    'host': 'localhost',
-    'database': 'polyphonic'
+    'user': os.environ.get('DB_USER'),
+    'password': os.environ.get('DB_PASSWORD'),
+    'host': os.environ.get('DB_HOST'),
+    'database': os.environ.get('DB_DATABASE')
 }
-
 # --- SETTINGS (MUST MATCH INGEST WORKER) ---
 SAMPLE_RATE = 22050
 FFT_WINDOW_SIZE = 2048

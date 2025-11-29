@@ -8,13 +8,21 @@ import librosa
 from scipy.ndimage import maximum_filter
 import warnings
 
-# 1. DATABASE CONFIGURATION
+import os
+from dotenv import load_dotenv
+
+# Load variables from .env file
+load_dotenv()
+
+# Access the variables using os.environ.get()
+# os.environ.get() reads environment variables
 db_config = {
-    'user': 'root',
-    'password': 'Suhit@2004',  # <--- UPDATE THIS IF NEEDED
-    'host': 'localhost',
-    'database': 'polyphonic'
+    'user': os.environ.get('DB_USER'),
+    'password': os.environ.get('DB_PASSWORD'),
+    'host': os.environ.get('DB_HOST'),
+    'database': os.environ.get('DB_DATABASE')
 }
+
 
 # --- AUDIO SETTINGS ---
 SAMPLE_RATE = 22050
